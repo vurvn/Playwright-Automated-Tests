@@ -51,7 +51,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'npx playwright show-report --no-open'
+                        sh 'npx playwright show-report --ci'
                     } catch (Exception e) {
                         error "❌ Failed to generate Playwright report: ${e.getMessage()}"
                     }
