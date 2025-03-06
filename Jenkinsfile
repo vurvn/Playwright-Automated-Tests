@@ -1,38 +1,29 @@
 pipeline {
-    agent any  // Run on any available agent
+    agent any
 
     stages {
-        stage('Check Shell') {
-            steps {
-                sh 'echo $SHELL'
-            }
-        }
-
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/vurvn/Playwright-Automated-Tests'  // Replace with your GitHub repo
+                git 'https://github.com/vurvn/Playwright-Automated-Tests.git'
             }
         }
 
-        stage('Debug Environment') {
+        stage('Install Dependencies') {
             steps {
-                sh 'set -x' // Enable debug mode
-                sh 'echo "Checking environment variables..."'
-                sh 'env'
+                sh 'npm install'
             }
         }
 
-        stage('Run Playwright API Tests') {
+        stage('Run Playwright Tests') {
             steps {
-                sh 'set -x && npx playwright test'
+                sh 'npx playwright test'
             }
         }
 
         stage('Generate Report') {
             steps {
-                sh 'set -x && npx playwright show-report'
+                sh 'npx playwright show-report || echo "Open report manually: open playwright-report/index.html"'
             }
         }
-        
     }
 }
