@@ -67,7 +67,8 @@ pipeline {
                     try {
                         
                         // Archive the HTML report so you can view it in Jenkins
-                        archiveArtifacts artifacts: 'playwright-report/**', fingerprint: true
+                        sh 'zip -r playwright-report.zip playwright-report' // Compress the report
+                        archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
                     } catch (Exception e) {
                         error "❌ Failed to save Playwright report: ${e.getMessage()}"
                     }
