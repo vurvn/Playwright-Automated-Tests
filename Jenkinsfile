@@ -91,8 +91,6 @@ pipeline {
         failure {
             echo "❌ Build failed! Check the logs for details."
         }
-        always {
-            echo "📜 Playwright Test Execution Completed."
-        }
+        
     }
 }
