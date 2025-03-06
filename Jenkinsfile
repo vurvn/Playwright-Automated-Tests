@@ -59,13 +59,17 @@ pipeline {
             }
         }
 
-        stage('Save Report as Artifact') {
+        stage('Archive Playwright Report') {
             steps {
                 script {
                     try {
+                        // Ensure the report is generated
+                        sh 'npx playwright test --reporter=html'
+
+                        // Archive the HTML report so you can view it in Jenkins
                         archiveArtifacts artifacts: 'playwright-report/**', fingerprint: true
                     } catch (Exception e) {
-                        error "❌ Failed to save report: ${e.getMessage()}"
+                        error "❌ Failed to save Playwright report: ${e.getMessage()}"
                     }
                 }
             }
