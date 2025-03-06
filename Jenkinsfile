@@ -61,23 +61,30 @@ pipeline {
             }
         }
 
-        stage('Archive Playwright Report') {
-            steps {
-                script {
-                    try {
+        // stage('Archive Playwright Report') {
+        //     steps {
+        //         script {
+        //             try {
                         
-                        // Archive the HTML report so you can view it in Jenkins
-                        sh 'zip -r playwright-report.zip playwright-report' // Compress the report
-                        archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
-                    } catch (Exception e) {
-                        error "❌ Failed to save Playwright report: ${e.getMessage()}"
-                    }
-                }
-            }
-        }
+        //                 // Archive the HTML report so you can view it in Jenkins
+        //                 sh 'zip -r playwright-report.zip playwright-report' // Compress the report
+        //                 archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+        //             } catch (Exception e) {
+        //                 error "❌ Failed to save Playwright report: ${e.getMessage()}"
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     post {
+        always {
+            script {
+                echo "📜 Archive Playwright Report..."
+                sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
+                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+            }
+        }
         success {
             echo "✅ Build completed successfully!"
         }
