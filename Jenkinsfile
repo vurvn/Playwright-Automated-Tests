@@ -51,7 +51,9 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'npx playwright show-report --ci'
+                        // Ensure the report is generated
+                        sh 'npx playwright test --reporter=html'
+
                     } catch (Exception e) {
                         error "❌ Failed to generate Playwright report: ${e.getMessage()}"
                     }
@@ -63,9 +65,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Ensure the report is generated
-                        sh 'npx playwright test --reporter=html'
-
+                        
                         // Archive the HTML report so you can view it in Jenkins
                         archiveArtifacts artifacts: 'playwright-report/**', fingerprint: true
                     } catch (Exception e) {
