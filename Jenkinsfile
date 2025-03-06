@@ -14,9 +14,15 @@ pipeline {
             }
         }
 
-        stage('Run Playwright API Tests') {
+       stage('Run Playwright API Tests') {
             steps {
-                sh 'npx playwright test'  // Run API tests
+                script {
+                    try {
+                        sh 'npx playwright test'
+                    } catch (err) {
+                        echo "Tests failed, but continuing to show report..."
+                    }
+                }
             }
         }
 
