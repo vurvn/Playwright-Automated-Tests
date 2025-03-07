@@ -67,16 +67,12 @@ pipeline {
             }
         }
 
-        stage('Cleanup Old Reports') {
+         stage('Archive Report') {
             steps {
                 script {
-                    sh 'rm -f playwright-report.zip' // Remove any previous zip file
-                    if (fileExists('playwright-report/index.html')) {
-                        sh 'zip -r playwright-report.zip playwright-report/' // Create a new zip file
-                    } else {
-                        error "❌ No Playwright report found!"
-                    }
-                    sh 'ls -lh playwright-report.zip' // List file to confirm it exists
+                    sh 'rm -f playwright-report.zip'
+                    sh 'zip -r playwright-report.zip playwright-report/'
+                    archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
                 }
             }
         }
@@ -85,10 +81,8 @@ pipeline {
 
     post {
         always {
-            script {
-                echo "📜 Archive Playwright Report..."
-                archiveArtifacts artifacts: '**/playwright-report.zip', fingerprint: true, onlyIfSuccessful: true
-            }
+            echo "📜 Cleaning up old reports..."
+            sh 'rm -rf playwright-report/'
         }
         success {
             echo "✅ Build completed successfully!"
