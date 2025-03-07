@@ -61,14 +61,23 @@ pipeline {
                 }
             }
         }
+
+        stage('Cleanup Old Reports') {
+            steps {
+                script {
+                    sh 'rm -rf playwright-report/ playwright-report.zip'
+                }
+            }
+        }
     }
+    
 
     post {
         always {
             script {
                 echo "📜 Archive Playwright Report..."
                 sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
-                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true, onlyIfSuccessful: true
             }
         }
         success {
