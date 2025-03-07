@@ -7,17 +7,22 @@ pipeline {
     }
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+        choice(name: 'BRANCH_NAME', 
+            choices: ['main', 'master', 'dev', 'feature-branch'], 
+            description: 'Select the Git branch to build')
     }
 
     options {
+        skipDefaultCheckout(true)  // This prevents automatic SCM checkout
         timeout(time: 10, unit: 'MINUTES') // Fail the build if it runs too long
     }
 
     stages {
         stage('Checkout Code') {
             steps {
+                //  echo "Skipping manual checkout, using Jenkins default checkout."
                 git branch: "${BRANCH_NAME}", url: 'https://github.com/vurvn/Playwright-Automated-Tests.git'
+                
                 // script {
                 //     try {
                 //         checkout([
@@ -56,35 +61,6 @@ pipeline {
                 }
             }
         }
-
-        // stage('Generate Report') {
-        //     steps {
-        //         script {
-        //             try {
-        //                 // Ensure the report is generated
-        //                 sh 'npx playwright test --reporter=html'
-
-        //             } catch (Exception e) {
-        //                 error "❌ Failed to generate Playwright report: ${e.getMessage()}"
-        //             }
-        //         }
-        //     }
-        // }
-
-        // stage('Archive Playwright Report') {
-        //     steps {
-        //         script {
-        //             try {
-                        
-        //                 // Archive the HTML report so you can view it in Jenkins
-        //                 sh 'zip -r playwright-report.zip playwright-report' // Compress the report
-        //                 archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
-        //             } catch (Exception e) {
-        //                 error "❌ Failed to save Playwright report: ${e.getMessage()}"
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     post {
