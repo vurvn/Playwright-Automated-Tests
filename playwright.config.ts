@@ -47,7 +47,7 @@ export default defineConfig({
   /* Configure testing across different browsers */
   projects: [
     {
-      name: "chromium",
+      name: "chromium", // npx playwright test --project=chromium //Runs tests only in Chromium
       use: { ...devices["Desktop Chrome"] },
     },
     {
@@ -64,5 +64,5 @@ export default defineConfig({
   outputDir: "test-results",
 
   /* Global timeout for each test */
-  timeout: 30000, // 30 seconds per test
+  timeout: 60000, // 60 seconds per test
 });

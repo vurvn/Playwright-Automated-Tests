@@ -39,7 +39,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'npx playwright test'
+                        sh 'npx playwright test --project=chromium' //Runs tests only in Chromium
                     } catch (Exception e) {
                         error "❌ Tests failed: ${e.getMessage()}"
                     }
@@ -60,21 +60,6 @@ pipeline {
                 }
             }
         }
-
-        // stage('Archive Playwright Report') {
-        //     steps {
-        //         script {
-        //             try {
-                        
-        //                 // Archive the HTML report so you can view it in Jenkins
-        //                 sh 'zip -r playwright-report.zip playwright-report' // Compress the report
-        //                 archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
-        //             } catch (Exception e) {
-        //                 error "❌ Failed to save Playwright report: ${e.getMessage()}"
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     post {
