@@ -6,6 +6,10 @@ pipeline {
         PATH = "${NODEJS_HOME}:${PATH}"
     }
 
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+    }
+
     options {
         timeout(time: 10, unit: 'MINUTES') // Fail the build if it runs too long
     }
@@ -15,9 +19,13 @@ pipeline {
             steps {
                 script {
                     try {
-                        git 'https://github.com/vurvn/Playwright-Automated-Tests.git'
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: "${BRANCH_NAME}"]],
+                            userRemoteConfigs: [[url: 'https://github.com/vurvn/Playwright-Automated-Tests.git']]
+                ])
                     } catch (Exception e) {
-                        error "❌ Failed to clone repository: ${e.getMessage()}"
+                        error "❌ Failed to clone repository from branch '${BRANCH_NAME}': ${e.getMessage()}"
                     }
                 }
             }
