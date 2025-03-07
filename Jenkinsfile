@@ -1,29 +1,96 @@
 pipeline {
-    agent any  // Run on any available agent
+    agent any  // Runs on any available Jenkins agent
+
+    environment {
+        NODEJS_HOME = '/usr/local/bin' // Set Node.js path if needed
+        PATH = "${NODEJS_HOME}:${PATH}"
+    }
+
+    options {
+        timeout(time: 10, unit: 'MINUTES') // Fail the build if it runs too long
+    }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/vurvn/Playwright-Automated-Tests'  // Replace with your GitHub repo
+                script {
+                    try {
+                        git 'https://github.com/vurvn/Playwright-Automated-Tests.git'
+                    } catch (Exception e) {
+                        error "❌ Failed to clone repository: ${e.getMessage()}"
+                    }
+                }
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'  // Install Playwright dependencies
+                script {
+                    try {
+                        sh 'npm install'
+                    } catch (Exception e) {
+                        error "❌ Failed to install dependencies: ${e.getMessage()}"
+                    }
+                }
             }
         }
 
-        stage('Run Playwright API Tests') {
+        stage('Run Playwright Tests') {
             steps {
-                sh 'npx playwright test'  // Run API tests
+                script {
+                    try {
+                        sh 'npx playwright test'
+                    } catch (Exception e) {
+                        error "❌ Tests failed: ${e.getMessage()}"
+                    }
+                }
             }
         }
 
         stage('Generate Report') {
             steps {
-                sh 'npx playwright show-report'  // Generate test report
+                script {
+                    try {
+                        // Ensure the report is generated
+                        sh 'npx playwright test --reporter=html'
+
+                    } catch (Exception e) {
+                        error "❌ Failed to generate Playwright report: ${e.getMessage()}"
+                    }
+                }
             }
         }
+
+        // stage('Archive Playwright Report') {
+        //     steps {
+        //         script {
+        //             try {
+                        
+        //                 // Archive the HTML report so you can view it in Jenkins
+        //                 sh 'zip -r playwright-report.zip playwright-report' // Compress the report
+        //                 archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+        //             } catch (Exception e) {
+        //                 error "❌ Failed to save Playwright report: ${e.getMessage()}"
+        //             }
+        //         }
+        //     }
+        // }
+    }
+
+    post {
+        always {
+            script {
+                echo "📜 Archive Playwright Report..."
+                sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
+                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+            }
+        }
+        success {
+            echo "✅ Build completed successfully!"
+        }
+        failure {
+            echo "❌ Build failed! Check the logs for details."
+        }
+        
     }
 }
