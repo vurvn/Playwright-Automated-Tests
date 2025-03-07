@@ -20,20 +20,25 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                //  echo "Skipping manual checkout, using Jenkins default checkout."
-                git branch: "${BRANCH_NAME}", url: 'https://github.com/vurvn/Playwright-Automated-Tests.git'
+                // FOR SKIP MANUAL CHECKOUT
+                // echo "Skipping manual checkout, using Jenkins default checkout."
+
+                //git branch: "${BRANCH_NAME}", url: 'https://github.com/vurvn/Playwright-Automated-Tests.git'
                 
-                // script {
-                //     try {
-                //         checkout([
-                //             $class: 'GitSCM',
-                //             branches: [[name: "${BRANCH_NAME}"]],
-                //             userRemoteConfigs: [[url: 'https://github.com/vurvn/Playwright-Automated-Tests.git']]
-                // ])
-                //     } catch (Exception e) {
-                //         error "❌ Failed to clone repository from branch '${BRANCH_NAME}': ${e.getMessage()}"
-                //     }
-                // }
+                
+                //If BRANCH_NAME doesn't exist, Jenkins may fail.
+                //Alternative: Use checkout scm for better handling:
+                script {
+                    try {
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: "${BRANCH_NAME}"]],
+                            userRemoteConfigs: [[url: 'https://github.com/vurvn/Playwright-Automated-Tests.git']]
+                ])
+                    } catch (Exception e) {
+                        error "❌ Failed to clone repository from branch '${BRANCH_NAME}': ${e.getMessage()}"
+                    }
+                }
             }
         }
 
@@ -66,7 +71,11 @@ pipeline {
             steps {
                 script {
                     sh 'rm -f playwright-report.zip' // Remove any previous zip file
-                    sh 'zip -r playwright-report.zip playwright-report/' // Create a new zip file
+                    if (fileExists('playwright-report/index.html')) {
+                        sh 'zip -r playwright-report.zip playwright-report/' // Create a new zip file
+                    } else {
+                        error "❌ No Playwright report found!"
+                    }
                     sh 'ls -lh playwright-report.zip' // List file to confirm it exists
                 }
             }
@@ -78,7 +87,6 @@ pipeline {
         always {
             script {
                 echo "📜 Archive Playwright Report..."
-                sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
                 archiveArtifacts artifacts: '**/playwright-report.zip', fingerprint: true, onlyIfSuccessful: true
             }
         }
