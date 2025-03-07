@@ -65,7 +65,11 @@ pipeline {
         stage('Cleanup Old Reports') {
             steps {
                 script {
+                    sh 'ls -R'  // Lists all files and directories
+
                     sh 'rm -rf playwright-report/ playwright-report.zip'
+                    sh 'zip -r playwright-report.zip playwright-report/' // Create a new zip file
+                    sh 'ls -lh playwright-report.zip' // List file to confirm it exists
                 }
             }
         }
