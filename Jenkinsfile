@@ -6,6 +6,10 @@ pipeline {
         PATH = "${NODEJS_HOME}:${PATH}"
     }
 
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+    }
+
     options {
         timeout(time: 10, unit: 'MINUTES') // Fail the build if it runs too long
     }
@@ -13,13 +17,18 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                script {
-                    try {
-                        git 'https://github.com/vurvn/Playwright-Automated-Tests.git'
-                    } catch (Exception e) {
-                        error "❌ Failed to clone repository: ${e.getMessage()}"
-                    }
-                }
+                git branch: "${BRANCH_NAME}", url: 'https://github.com/vurvn/Playwright-Automated-Tests.git'
+                // script {
+                //     try {
+                //         checkout([
+                //             $class: 'GitSCM',
+                //             branches: [[name: "${BRANCH_NAME}"]],
+                //             userRemoteConfigs: [[url: 'https://github.com/vurvn/Playwright-Automated-Tests.git']]
+                // ])
+                //     } catch (Exception e) {
+                //         error "❌ Failed to clone repository from branch '${BRANCH_NAME}': ${e.getMessage()}"
+                //     }
+                // }
             }
         }
 
@@ -35,19 +44,46 @@ pipeline {
             }
         }
 
-        stage('Run & Generate Report Playwright Tests') {
+        stage('Run Playwright Tests') {
             steps {
                 script {
                     try {
-                        //Runs tests only in Chromium 
-                        sh 'npx playwright test --project=chromium --reporter=html'  
+                        sh 'npx playwright test'
                     } catch (Exception e) {
-                        error "❌ Run & Generate Report failed: ${e.getMessage()}"
+                        error "❌ Tests failed: ${e.getMessage()}"
                     }
                 }
             }
         }
 
+        stage('Generate Report') {
+            steps {
+                script {
+                    try {
+                        // Ensure the report is generated
+                        sh 'npx playwright test --reporter=html'
+
+                    } catch (Exception e) {
+                        error "❌ Failed to generate Playwright report: ${e.getMessage()}"
+                    }
+                }
+            }
+        }
+
+        // stage('Archive Playwright Report') {
+        //     steps {
+        //         script {
+        //             try {
+                        
+        //                 // Archive the HTML report so you can view it in Jenkins
+        //                 sh 'zip -r playwright-report.zip playwright-report' // Compress the report
+        //                 archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+        //             } catch (Exception e) {
+        //                 error "❌ Failed to save Playwright report: ${e.getMessage()}"
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     post {
