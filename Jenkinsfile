@@ -65,9 +65,7 @@ pipeline {
         stage('Cleanup Old Reports') {
             steps {
                 script {
-                    sh 'ls -R'  // Lists all files and directories
-
-                    sh 'rm -rf playwright-report/ playwright-report.zip'
+                    sh 'rm -f playwright-report.zip' // Remove any previous zip file
                     sh 'zip -r playwright-report.zip playwright-report/' // Create a new zip file
                     sh 'ls -lh playwright-report.zip' // List file to confirm it exists
                 }
@@ -81,7 +79,7 @@ pipeline {
             script {
                 echo "📜 Archive Playwright Report..."
                 sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
-                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true, onlyIfSuccessful: true
+                archiveArtifacts artifacts: '**/playwright-report.zip', fingerprint: true, onlyIfSuccessful: true
             }
         }
         success {
