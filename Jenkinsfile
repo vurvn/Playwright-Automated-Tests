@@ -67,22 +67,28 @@ pipeline {
             }
         }
 
-         stage('Archive Report') {
+        stage('Generate Report') {
             steps {
                 script {
-                    sh 'rm -f playwright-report.zip'
-                    sh 'zip -r playwright-report.zip playwright-report/'
-                    archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+                    try {
+                        // Ensure the report is generated
+                        sh 'npx playwright test --reporter=html'
+
+                    } catch (Exception e) {
+                        error "❌ Failed to generate Playwright report: ${e.getMessage()}"
+                    }
                 }
             }
         }
     }
-    
 
     post {
         always {
-            echo "📜 Cleaning up old reports..."
-            sh 'rm -rf playwright-report/'
+            script {
+                echo "📜 Archive Playwright Report..."
+                sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
+                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
+            }
         }
         success {
             echo "✅ Build completed successfully!"
