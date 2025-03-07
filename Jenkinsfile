@@ -44,31 +44,32 @@ pipeline {
             }
         }
 
-        stage('Run Playwright Tests') {
+        stage('Run & Generate Report Playwright Tests') {
             steps {
                 script {
                     try {
-                        sh 'npx playwright test'
+                        //Runs tests only in Chromium 
+                        sh 'npx playwright test --project=chromium --reporter=html'  
                     } catch (Exception e) {
-                        error "❌ Tests failed: ${e.getMessage()}"
+                        error "❌ Run & Generate Report failed: ${e.getMessage()}"
                     }
                 }
             }
         }
 
-        stage('Generate Report') {
-            steps {
-                script {
-                    try {
-                        // Ensure the report is generated
-                        sh 'npx playwright test --reporter=html'
+        // stage('Generate Report') {
+        //     steps {
+        //         script {
+        //             try {
+        //                 // Ensure the report is generated
+        //                 sh 'npx playwright test --reporter=html'
 
-                    } catch (Exception e) {
-                        error "❌ Failed to generate Playwright report: ${e.getMessage()}"
-                    }
-                }
-            }
-        }
+        //             } catch (Exception e) {
+        //                 error "❌ Failed to generate Playwright report: ${e.getMessage()}"
+        //             }
+        //         }
+        //     }
+        // }
 
         // stage('Archive Playwright Report') {
         //     steps {
