@@ -61,7 +61,7 @@ pipeline {
                 script {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         def browserProjects = params.RUN_ALL_BROWSERS ? '' : '--project=chromium'
-                        sh "npx playwright test ${browserProjects} --reporter=html,junit"
+                        sh "npx playwright test ${browserProjects} --reporter=html"
                     }
                 }
             }

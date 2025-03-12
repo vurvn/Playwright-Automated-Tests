@@ -23,7 +23,6 @@ export default defineConfig({
     /* Test report configuration */
     reporter: [
         ['html'],
-        ['junit', {outputFile: 'playwright-report/results.xml'}],
         ['json', {outputFile: 'playwright-report/results.json'}],
     ],
 
