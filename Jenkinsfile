@@ -70,11 +70,9 @@ pipeline {
     post {
         always {
             script {
-                sh 'mkdir -p playwright-report || true'
-                junit(testResults: 'playwright-report/*.xml', allowEmptyResults: true)
-                sh 'mkdir -p artifacts && zip -r artifacts/playwright-report.zip playwright-report || true'
-                archiveArtifacts artifacts: 'artifacts/playwright-report.zip', fingerprint: true, allowEmptyArchive: false
-                sh 'rm -rf node_modules playwright-report || true'
+                echo "📜 Archive Playwright Report..."
+                sh 'zip -r playwright-report.zip playwright-report || true' // Avoid failure if folder doesn't exist
+                archiveArtifacts artifacts: 'playwright-report.zip', fingerprint: true
             }
         }
         success { echo "✅ Build completed successfully!" }
