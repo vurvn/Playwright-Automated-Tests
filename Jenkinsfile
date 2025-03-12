@@ -24,17 +24,14 @@ pipeline {
     stages {
         stage('Cleanup') {
             steps {
-                // Use ansiColor as a wrapper instead
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    script {
-                        echo "🧹 Cleaning up old reports and artifacts..."
-                        sh '''
-                        rm -rf playwright-report/ || true
-                        rm -rf test-results/ || true
-                        rm -rf artifacts/ || true
-                        rm -f *.zip || true
-                        '''
-                    }
+                script {
+                    echo "🧹 Cleaning up old reports and artifacts..."
+                    sh '''
+                    rm -rf playwright-report/ || true
+                    rm -rf test-results/ || true
+                    rm -rf artifacts/ || true
+                    rm -f *.zip || true
+                    '''
                 }
             }
         }
@@ -100,44 +97,26 @@ pipeline {
                 fi
                 '''
                 
-                // Archive the HTML report
-                publishHTML([
-                    allowMissing: false, // Fail if report missing
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'playwright-report',
-                    reportFiles: 'index.html',
-                    reportName: 'Playwright Report'
-                ])
-                
                 // Archive JUnit reports for Jenkins test trend
                 junit(testResults: 'playwright-report/junit*.xml', allowEmptyResults: true)
                 
-                // Archive the raw report directory with FORCE KEEP
+                // Create a zip of the report but don't display it in UI
+                sh '''
+                mkdir -p artifacts
+                zip -r artifacts/playwright-report.zip playwright-report || true
+                '''
+                
+                // Archive only the ZIP file
                 archiveArtifacts(
-                    artifacts: 'playwright-report/**/*', 
+                    artifacts: 'artifacts/playwright-report.zip', 
                     fingerprint: true, 
                     allowEmptyArchive: false, // Fail if archive is empty
                     onlyIfSuccessful: false   // Save even on failure
                 )
                 
-                // Create a redundant zip backup of reports for extra assurance
-                sh '''
-                mkdir -p artifacts
-                cp -r playwright-report artifacts/ || true
-                zip -r artifacts/playwright-report-backup.zip playwright-report || true
-                '''
-                
-                // Archive the backup zip
-                archiveArtifacts(
-                    artifacts: 'artifacts/**/*',
-                    fingerprint: true,
-                    allowEmptyArchive: true,
-                    onlyIfSuccessful: false
-                )
-                
                 // Clean up to save disk space
                 sh 'rm -rf node_modules || true'
+                sh 'rm -rf playwright-report || true'  // Remove the raw report directory after zipping
             }
         }
         success {
