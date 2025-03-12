@@ -23,6 +23,7 @@ pipeline {
                     echo "🧹 Cleaning up old reports and artifacts..."
                     sh 'rm -rf playwright-report/ test-results/ artifacts/ *.zip || true'
                 }
+                deleteDir()
             }
         }
 

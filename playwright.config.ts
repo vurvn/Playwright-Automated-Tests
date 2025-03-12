@@ -31,7 +31,7 @@ export default defineConfig({
 
     use: {
         /* Base URL for testing (set in .env or default to localhost) */
-        baseURL: process.env.BASE_URL || 'http://127.0.0.1:3000',
+        baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
         /* Capture traces for debugging failures */
         trace: 'on-first-retry',
@@ -66,5 +66,5 @@ export default defineConfig({
     outputDir: 'test-results',
 
     /* Global timeout for each test */
-    timeout: 60000, // 60 seconds per test
+    timeout: 30 * 1000,
 });
