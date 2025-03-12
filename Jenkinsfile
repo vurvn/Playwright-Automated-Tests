@@ -4,7 +4,10 @@ pipeline {
     environment {
         NODEJS_HOME = '/usr/local/bin'
         PATH = "${NODEJS_HOME}:${PATH}"
-        PLAYWRIGHT_BROWSERS_PATH = '0' // Cache browsers in agent to avoid re-downloading
+        // Set a fixed location for browser binaries, shared between builds
+        PLAYWRIGHT_BROWSERS_PATH = '/var/jenkins_home/playwright-browsers'
+        // Skip browser download if already installed
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1'
     }
 
     parameters {
@@ -14,6 +17,9 @@ pipeline {
         booleanParam(name: 'RUN_ALL_BROWSERS', 
             defaultValue: false, 
             description: 'Run tests in all browsers (Chrome, Firefox, WebKit) instead of just Chromium')
+        booleanParam(name: 'FORCE_BROWSER_DOWNLOAD', 
+            defaultValue: false, 
+            description: 'Force browsers to be downloaded even if already installed')
     }
 
     options {
@@ -56,10 +62,35 @@ pipeline {
         stage('Install Playwright Browsers') {
             steps {
                 script {
-                    if (params.RUN_ALL_BROWSERS) {
-                        sh 'npx playwright install'
+                    // Create browsers directory if it doesn't exist
+                    sh "mkdir -p ${env.PLAYWRIGHT_BROWSERS_PATH}"
+                    
+                    // Check if browser is already installed
+                    def chromiumExists = sh(script: "test -d ${env.PLAYWRIGHT_BROWSERS_PATH}/chromium-* && echo 'true' || echo 'false'", returnStdout: true).trim()
+                    def firefoxExists = sh(script: "test -d ${env.PLAYWRIGHT_BROWSERS_PATH}/firefox-* && echo 'true' || echo 'false'", returnStdout: true).trim()
+                    def webkitExists = sh(script: "test -d ${env.PLAYWRIGHT_BROWSERS_PATH}/webkit-* && echo 'true' || echo 'false'", returnStdout: true).trim()
+                    
+                    if (params.FORCE_BROWSER_DOWNLOAD || chromiumExists == 'false') {
+                        echo "Installing Chromium browser..."
+                        sh "PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH} npx playwright install chromium"
                     } else {
-                        sh 'npx playwright install chromium'
+                        echo "Chromium browser already installed, skipping download."
+                    }
+                    
+                    if (params.RUN_ALL_BROWSERS) {
+                        if (params.FORCE_BROWSER_DOWNLOAD || firefoxExists == 'false') {
+                            echo "Installing Firefox browser..."
+                            sh "PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH} npx playwright install firefox"
+                        } else {
+                            echo "Firefox browser already installed, skipping download."
+                        }
+                        
+                        if (params.FORCE_BROWSER_DOWNLOAD || webkitExists == 'false') {
+                            echo "Installing WebKit browser..."
+                            sh "PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH} npx playwright install webkit"
+                        } else {
+                            echo "WebKit browser already installed, skipping download."
+                        }
                     }
                 }
             }
@@ -70,7 +101,7 @@ pipeline {
                 script {
                     try {
                         def browserProjects = params.RUN_ALL_BROWSERS ? '' : '--project=chromium'
-                        sh "npx playwright test ${browserProjects} --reporter=html,junit"
+                        sh "PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH} npx playwright test ${browserProjects} --reporter=html,junit"
                     } catch (Exception e) {
                         // We'll capture test failures but continue the pipeline
                         echo "Tests failed but continuing to generate reports: ${e.getMessage()}"
@@ -78,7 +109,7 @@ pipeline {
                     } finally {
                         // Force report generation if tests crashed badly
                         echo "Ensuring report is generated even if tests crashed..."
-                        sh "npx playwright show-report || true"
+                        // sh "npx playwright show-report || true"
                     }
                 }
             }
@@ -93,7 +124,7 @@ pipeline {
                 if [ ! -d "playwright-report" ] || [ ! -f "playwright-report/index.html" ]; then
                     echo "Report directory missing or empty, forcing report generation..."
                     mkdir -p playwright-report
-                    npx playwright show-report || true
+                    
                 fi
                 '''
                 
