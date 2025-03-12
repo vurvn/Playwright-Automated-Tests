@@ -4,13 +4,11 @@ pipeline {
     environment {
         NODEJS_HOME = '/usr/local/bin'
         PATH = "${NODEJS_HOME}:${PATH}"
-        PLAYWRIGHT_BROWSERS_PATH = "${HOME}/.cache/ms-playwright"
     }
 
     parameters {
         choice(name: 'BRANCH_NAME', choices: ['main', 'dev', 'master', 'feature-branch'], description: 'Select the Git branch to build')
         booleanParam(name: 'RUN_ALL_BROWSERS', defaultValue: false, description: 'Run tests in all browsers')
-        booleanParam(name: 'FORCE_BROWSER_DOWNLOAD', defaultValue: false, description: 'Force browser download')
     }
 
     options {
@@ -41,28 +39,17 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm ci'
+                sh 'npm ci'// Uses package-lock.json for deterministic builds
             }
         }
 
         stage('Install Playwright Browsers') {
             steps {
                 script {
-                    sh "sudo mkdir -p ${env.PLAYWRIGHT_BROWSERS_PATH}"
-                    sh "sudo chown -R jenkins:jenkins ${env.PLAYWRIGHT_BROWSERS_PATH}"
-                    
-                    def isInstalled = { browser -> sh(script: "[[ -d '${env.PLAYWRIGHT_BROWSERS_PATH}/${browser}-*' ]] && echo 'true' || echo 'false'", returnStdout: true).trim() }
-                    
-                    if (params.FORCE_BROWSER_DOWNLOAD || isInstalled('chromium') == 'false') {
-                        sh "npx playwright install chromium"
-                    }
-                    
                     if (params.RUN_ALL_BROWSERS) {
-                        ['firefox', 'webkit'].each { browser ->
-                            if (params.FORCE_BROWSER_DOWNLOAD || isInstalled(browser) == 'false') {
-                                sh "npx playwright install ${browser}"
-                            }
-                        }
+                        sh 'npx playwright install'
+                    } else {
+                        sh 'npx playwright install chromium'
                     }
                 }
             }
