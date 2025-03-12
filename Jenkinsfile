@@ -19,20 +19,22 @@ pipeline {
     options {
         timeout(time: 15, unit: 'MINUTES')
         disableConcurrentBuilds() // Prevent concurrent builds of the same branch
-        ansiColor('xterm') // Colorized output for better readability
     }
 
     stages {
         stage('Cleanup') {
             steps {
-                script {
-                    echo "🧹 Cleaning up old reports and artifacts..."
-                    sh '''
-                    rm -rf playwright-report/ || true
-                    rm -rf test-results/ || true
-                    rm -rf artifacts/ || true
-                    rm -f *.zip || true
-                    '''
+                // Use ansiColor as a wrapper instead
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    script {
+                        echo "🧹 Cleaning up old reports and artifacts..."
+                        sh '''
+                        rm -rf playwright-report/ || true
+                        rm -rf test-results/ || true
+                        rm -rf artifacts/ || true
+                        rm -f *.zip || true
+                        '''
+                    }
                 }
             }
         }
