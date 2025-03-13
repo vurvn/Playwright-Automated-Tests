@@ -34,12 +34,10 @@ export default defineConfig({
 
         /* Capture traces for debugging failures */
         trace: 'on-first-retry',
-
-        /* Screenshot on failure */
         screenshot: 'only-on-failure',
 
         /* Video recording (disabled by default, enable if needed) */
-        video: process.env.CI ? 'retain-on-failure' : 'off',
+        video: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
 
         /* Headless mode (can be controlled via environment variables) */
         headless: process.env.HEADLESS === 'true',
