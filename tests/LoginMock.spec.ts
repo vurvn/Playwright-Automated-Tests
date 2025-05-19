@@ -4,6 +4,7 @@ test.describe('ReqRes API Tests', () => {
     test('LOGIN - SUCCESSFUL', async ({request}) => {
         const response = await request.post('https://reqres.in/api/login', {
             data: {email: 'eve.holt@reqres.in', password: 'cityslicka'},
+            headers: {'x-api-key': 'reqres-free-v1'},
         });
 
         expect(response.status()).toBe(200);
@@ -17,6 +18,7 @@ test.describe('ReqRes API Tests', () => {
     test('LOGIN - UNSUCCESSFUL', async ({request}) => {
         const response = await request.post('https://reqres.in/api/login', {
             data: {email: 'peter@klaven'},
+            headers: {'x-api-key': 'reqres-free-v1'},
         });
 
         expect(response.status()).toBe(400);
@@ -29,7 +31,8 @@ test.describe('ReqRes API Tests', () => {
     test('DELAYED RESPONSE', async ({request}) => {
         const startTime = Date.now();
         const response = await request.get(
-            'https://reqres.in/api/users?delay=3'
+            'https://reqres.in/api/users?delay=3',
+            {headers: {'x-api-key': 'reqres-free-v1'}}
         );
         const endTime = Date.now();
         const responseTime = (endTime - startTime) / 1000;

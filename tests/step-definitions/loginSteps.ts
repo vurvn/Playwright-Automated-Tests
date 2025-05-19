@@ -1,103 +1,171 @@
 import {
-  Given,
-  When,
-  Then,
-  After,
-  Before,
-  BeforeAll,
-  AfterAll,
-} from "@cucumber/cucumber";
-import { expect, chromium, Page, Browser } from "@playwright/test";
-import { startTracing, stopTracing } from "../support/hooks";
-import { CustomWorld } from "../support/world";
+    Given,
+    When,
+    Then,
+    Before,
+    BeforeAll,
+    AfterAll,
+    defineParameterType,
+} from '@cucumber/cucumber';
+import {expect, Page} from '@playwright/test';
+import {CustomWorld} from '../support/world';
 
+// Define custom parameter types for better readability and reuse
+defineParameterType({
+    name: 'credential_type',
+    regexp: /username|password/,
+    transformer(value) {
+        return value;
+    },
+});
+
+defineParameterType({
+    name: 'validation_state',
+    regexp: /valid|invalid|empty|special characters/,
+    transformer(value) {
+        return value;
+    },
+});
+
+// Page object model for login page
+class LoginPage {
+    readonly page: Page;
+
+    constructor(page: Page) {
+        this.page = page;
+    }
+
+    // Locators using Playwright's recommended role-based and label-based selectors
+    get usernameInput() {
+        return this.page.getByLabel('Username', {exact: true});
+    }
+    get passwordInput() {
+        return this.page.getByLabel('Password', {exact: true});
+    }
+    get submitButton() {
+        return this.page.getByRole('button', {name: 'Submit'});
+    }
+    get logoutLink() {
+        return this.page.getByRole('link', {name: 'Log out'});
+    }
+    get errorMessage() {
+        return this.page.locator('#error');
+    }
+    get successHeading() {
+        return this.page.getByRole('heading', {name: 'Logged In Successfully'});
+    }
+    get testLoginHeading() {
+        return this.page.getByRole('heading', {name: 'Test login'});
+    }
+
+    // Page actions
+    async navigateToLoginPage() {
+        await this.page.goto(
+            'https://practicetestautomation.com/practice-test-login/',
+            {
+                waitUntil: 'networkidle',
+            }
+        );
+        await expect(this.testLoginHeading).toBeVisible();
+    }
+
+    async enterCredential(type: string, value: string) {
+        const input =
+            type === 'username' ? this.usernameInput : this.passwordInput;
+        await input.fill(value);
+    }
+
+    async submitForm() {
+        await Promise.all([
+            this.page.waitForLoadState('networkidle'),
+            this.submitButton.click(),
+        ]);
+    }
+
+    async expectSuccessMessage() {
+        await expect(this.successHeading).toBeVisible();
+    }
+
+    async expectErrorMessage(message: string) {
+        await expect(this.errorMessage).toContainText(message);
+    }
+
+    async expectRedirection(urlPattern: string) {
+        await expect(this.page).toHaveURL(new RegExp(urlPattern));
+    }
+}
+
+// Test context
+let world: CustomWorld;
 let page: Page;
-let browser: Browser;
+let loginPage: LoginPage;
 
-const world = new CustomWorld();
-
-// Run your test logic...
+// Hooks for setup and teardown
 BeforeAll(async function () {
-  // Manually start tracing
-  await startTracing(world);
+    world = new CustomWorld();
+    world.testName = 'Login_Test';
+    await world.setup();
 });
 
 Before(async function () {
-  // browser = await chromium.launch({ headless: false });
-  // const context = await browser.newContext();
-  page = world.page;
-  // Manually start tracing
-  await startTracing(world);
+    page = world.page;
+    loginPage = new LoginPage(page);
 });
 
-Given("I open the login page", async () => {
-  await page.goto("https://practicetestautomation.com/practice-test-login/");
+AfterAll(async function () {
+    await world.teardown();
+});
+
+// Step definitions
+Given('I am on the login page', async function () {
+    try {
+        await loginPage.navigateToLoginPage();
+    } catch (error: any) {
+        throw new Error(`Failed to load login page: ${error.message}`);
+    }
 });
 
 When(
-  "I enter username {string} and password {string}",
-  async (username: string, password: string) => {
-    await page.fill("#username", username);
-    await page.fill("#password", password);
-  }
+    'I enter {validation_state} {credential_type} {string}',
+    async function (state: string, type: string, value: string) {
+        await loginPage.enterCredential(type, value);
+    }
 );
 
-When("I click the login button", async () => {
-  await page.click("#submit");
+When(
+    'I enter {string} {credential_type} {string}',
+    async function (state: string, type: string, value: string) {
+        await loginPage.enterCredential(type, value);
+    }
+);
+
+When('I submit the login form', async function () {
+    await loginPage.submitForm();
 });
 
-Then("I should see the welcome message", async () => {
-  await page.waitForSelector("text=Logged In Successfully");
-  const message = await page.textContent("h1");
-  expect(message).toContain("Logged In Successfully");
+Then('I should see a success message', async function () {
+    await loginPage.expectSuccessMessage();
 });
 
-// ✅ Verify URL contains "practicetestautomation.com/logged-in-successfully/"
-Then("The URL should contain {string}", async (expectedURL: string) => {
-  await page.waitForLoadState("domcontentloaded");
-  expect(page.url()).toContain(expectedURL);
+Then('I should be redirected to {string}', async function (urlPattern: string) {
+    await loginPage.expectRedirection(urlPattern);
 });
 
-// ✅ Verify page contains "Congratulations" or "successfully logged in"
 Then(
-  "The page should contain text {string} or {string}",
-  async (text1: string, text2: string) => {
-    const pageContent = await page.textContent("body");
-    expect(pageContent).toMatch(new RegExp(`${text1}|${text2}`, "i"));
-  }
+    'the page should display {string} or {string}',
+    async function (text1: string, text2: string) {
+        const pattern = new RegExp(`${text1}|${text2}`, 'i');
+        await expect(page.getByText(pattern)).toBeVisible();
+    }
 );
 
-// ✅ Verify the Log out button is displayed
-Then("The Log out button should be visible", async () => {
-  // class = wp-block-button__link has-text-color has-background has-very-dark-gray-background-color
-  // console.log("🔎 Checking if the page is loaded...");
-  // await page.waitForLoadState("domcontentloaded");
-
-  // console.log("🔎 Checking if the Log out button exists...");
-  // const logoutButton = page.getByRole("button", { name: "Log out" });
-
-  // console.log("🔎 Checking if the Log out button is visible...");
-  // await expect(logoutButton).toBeVisible();
-
-  // console.log("✅ Log out button is visible!");
-
-  // const logoutButton = page.getByRole("button", { name: "Log out" });
-  // await expect(logoutButton).toBeVisible();
-  const button = page.locator(".wp-block-button__link");
-  await expect(button).toBeVisible();
+Then('the logout option should be available', async function () {
+    await expect(loginPage.logoutLink).toBeVisible();
 });
 
-Then("I should see an error message {string}", async (errorMessage: string) => {
-  await page.waitForSelector("text=" + errorMessage);
-  const errorText = await page.textContent("div#error"); // Adjust selector if needed
-  expect(errorText).toContain(errorMessage);
-});
-
-// After(async function () {
-//   await browser.close();
-// });
-
-AfterAll(async function () {
-  // Manually stop tracing
-  await stopTracing(world);
-});
+Then(
+    'I should see an error indicating {string}',
+    async function (errorMessage: string) {
+        await loginPage.expectErrorMessage(errorMessage);
+    }
+);

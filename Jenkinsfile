@@ -7,7 +7,7 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'BRANCH_NAME', choices: ['main', 'dev', 'master', 'feature-branch'], description: 'Select the Git branch to build')
+        choice(name: 'BRANCH_NAME', choices: ['jenkins_cicd', 'main', 'dev', 'master'], description: 'Select the Git branch to build')
         booleanParam(name: 'RUN_ALL_BROWSERS', defaultValue: false, description: 'Run tests in all browsers')
     }
 
