@@ -10,7 +10,6 @@ To run tests using Playwright, execute the command
 ## Jenkins
 
 To start Jenkins, use the command
-
 `brew services start jenkins-lts`.
 
 To stop Jenkins, use the command
